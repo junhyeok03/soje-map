@@ -3,6 +3,13 @@ import fs from "node:fs";
 import path from "node:path";
 
 const projectRoot = process.cwd();
+const standaloneClientDir = path.join(
+  projectRoot,
+  "dist",
+  "standalone",
+  "dist",
+  "client",
+);
 const standaloneModules = path.join(
   projectRoot,
   "dist",
@@ -14,6 +21,33 @@ if (!fs.existsSync(standaloneModules)) {
   throw new Error(
     "Standalone output was not found. Set next.config output to standalone before running this script.",
   );
+}
+
+function normalizePublicPath(value) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed === "/") return "";
+
+  return trimmed.replace(/^\/+|\/+$/g, "");
+}
+
+// A path-style assetPrefix makes vinext place built files under
+// dist/client/<prefix>/_next. The school router removes that prefix before the
+// request reaches this server, so relocate only the standalone copy to the
+// root path that the container actually receives.
+const publicPath = normalizePublicPath(process.env.NEXT_PUBLIC_BASE_PATH);
+if (publicPath) {
+  const prefixedNextDir = path.join(standaloneClientDir, publicPath, "_next");
+  const internalNextDir = path.join(standaloneClientDir, "_next");
+
+  if (!fs.existsSync(prefixedNextDir)) {
+    throw new Error(
+      `Prefixed standalone assets were not found: ${prefixedNextDir}`,
+    );
+  }
+
+  fs.rmSync(internalNextDir, { force: true, recursive: true });
+  fs.renameSync(prefixedNextDir, internalNextDir);
+  console.log(`  Remapped standalone assets to /_next for /${publicPath}.`);
 }
 
 const rootRequire = createRequire(path.join(projectRoot, "package.json"));

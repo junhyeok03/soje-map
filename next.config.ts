@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-function normalizeBasePath(value: string | undefined): string {
+function normalizePublicPathPrefix(value: string | undefined): string {
   const trimmed = value?.trim();
   if (!trimmed || trimmed === "/") return "";
 
@@ -8,16 +8,18 @@ function normalizeBasePath(value: string | undefined): string {
   return withLeadingSlash.replace(/\/+$/, "");
 }
 
-const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
+const publicPathPrefix = normalizePublicPathPrefix(
+  process.env.NEXT_PUBLIC_BASE_PATH,
+);
 
 const nextConfig: NextConfig = {
   // Self-hosted Docker images only need the standalone server bundle and its
   // runtime dependencies. This keeps the Raspberry Pi image much smaller.
   output: "standalone",
-  basePath,
-  // vinext standalone currently uses assetPrefix when resolving the physical
-  // _next/static directory. Keep it aligned with basePath for sub-path hosting.
-  assetPrefix: basePath || undefined,
+  // The school Nginx router removes /member/app before proxying to this
+  // container. Keep application routes rooted at /, but publish browser asset
+  // URLs with the external prefix so those requests pass through the router.
+  assetPrefix: publicPathPrefix || undefined,
 };
 
 export default nextConfig;

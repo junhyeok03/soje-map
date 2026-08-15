@@ -1,12 +1,12 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { APP_BASE_PATH } from "../app/site-config";
 
-// The custom Worker wrapper must forward this build metadata so vinext's
-// standalone Node server can map base-path-prefixed _next/static requests.
-export const __basePath = APP_BASE_PATH;
-export const __assetPrefix = APP_BASE_PATH;
+// Nginx strips the public /member/app prefix before forwarding requests. The
+// standalone server therefore receives and serves /_next and /locations at
+// its root even though browser-facing URLs include the public asset prefix.
+export const __basePath = "";
+export const __assetPrefix = "";
 
 interface Fetcher {
   fetch(input: Request): Promise<Response>;

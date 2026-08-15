@@ -18,8 +18,10 @@ cd soje-map
 docker compose up -d
 ```
 
-기본 공개 주소는 `http://서버IP:18080/junhyeok/pj`입니다. 관리자가 다른
-경로 또는 포트를 지정한 경우에만 다음과 같이 `.env`를 만든 뒤 기동합니다.
+라즈베리파이에서 직접 확인하는 주소는 `http://서버IP:18080/`입니다. 기본
+공개 주소는 학교 Nginx를 거친 `https://daisy.wisoft.dev/junhyeok/pj`입니다.
+관리자가 다른 공개 경로 또는 포트를 지정한 경우에만 다음과 같이 `.env`를
+만든 뒤 기동합니다.
 
 ```bash
 cp .env.example .env
@@ -31,7 +33,7 @@ docker compose up -d
 
 ```bash
 docker compose ps
-curl -fsS http://127.0.0.1:18080/junhyeok/pj/ > /dev/null && echo "frontend: OK"
+curl -fsS http://127.0.0.1:18080/ > /dev/null && echo "frontend: OK"
 curl -fsS http://127.0.0.1:18081/actuator/health
 ```
 
@@ -68,7 +70,8 @@ docker compose down
 docker compose ps
 ```
 
-학교 Nginx는 `/junhyeok/pj` 요청을 기본값 기준으로 라즈베리파이의 `18080`
-포트에 접두사를 제거하지 않고 전달하면 됩니다. `proxy_pass` 주소 끝에 `/`를
-붙이지 않아야 합니다. Spring API를 실제로 사용하기 전까지 외부에는 백엔드
-`18081` 포트를 개방할 필요가 없습니다.
+학교 Nginx는 `/junhyeok/pj` 접두사를 제거하고 나머지 경로를 라즈베리파이의
+`18080` 포트로 전달합니다. 예를 들어 공개 주소의
+`/junhyeok/pj/_next/static/...`은 컨테이너의 `/_next/static/...`으로 전달되어야
+합니다. Spring API를 실제로 사용하기 전까지 외부에는 백엔드 `18081` 포트를
+개방할 필요가 없습니다.
