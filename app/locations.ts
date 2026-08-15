@@ -1,3 +1,5 @@
+import { withBasePath } from "./site-config";
+
 export type Era = "past" | "present" | "future";
 
 export type EraPhoto = {
@@ -76,7 +78,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "대전전통나래관 자리의 과거 상상 이미지",
         photo: {
           ...AI_PAST,
-          src: "/locations/generated/traditional-narae-hall-past-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/traditional-narae-hall-past-ai.jpg",
+          ),
           alt: "1920년대 소제호 주변 마을을 흑백 기록 사진처럼 상상한 AI 이미지",
           capturedAt: "1920년대 추정 장면",
         },
@@ -89,7 +93,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "대전전통나래관 현재 사진",
         photo: {
           ...DAEJEON_ARCHIVE,
-          src: "/locations/traditional-narae-hall.jpg",
+          src: withBasePath("/locations/traditional-narae-hall.jpg"),
           alt: "맑은 하늘 아래 대전전통나래관 건물 전경",
           capturedAt: "2026.01.08 촬영",
           sourceUrl:
@@ -104,7 +108,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "대전전통나래관의 미래 비전 이미지",
         photo: {
           ...AI_FUTURE,
-          src: "/locations/generated/traditional-narae-hall-future-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/traditional-narae-hall-future-ai.jpg",
+          ),
           alt: "그늘과 무장애 보행 공간이 더해진 2035년 전통문화 거점을 상상한 AI 이미지",
           capturedAt: "2035년 제안 장면",
         },
@@ -131,7 +137,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "철갑교 주변의 과거 상상 이미지",
         photo: {
           ...AI_PAST,
-          src: "/locations/generated/cheolgap-bridge-past-ai.jpg",
+          src: withBasePath("/locations/generated/cheolgap-bridge-past-ai.jpg"),
           alt: "1930년대 자연 하천과 작은 나무다리를 흑백 기록 사진처럼 상상한 AI 이미지",
           capturedAt: "1930년대 추정 장면",
         },
@@ -144,7 +150,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "철갑교 인근 대동천 현재 사진",
         photo: {
           ...DAEJEON_ARCHIVE,
-          src: "/locations/cheolgap-bridge.jpg",
+          src: withBasePath("/locations/cheolgap-bridge.jpg"),
           alt: "벚꽃이 핀 대동천 산책로와 교량 인근 풍경",
           capturedAt: "2026.04.02 촬영",
           sourceUrl:
@@ -159,7 +165,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "철갑교의 미래 연결 지점 이미지",
         photo: {
           ...AI_FUTURE,
-          src: "/locations/generated/cheolgap-bridge-future-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/cheolgap-bridge-future-ai.jpg",
+          ),
           alt: "복원된 수변과 보행 중심 다리가 연결된 2035년 철갑교를 상상한 AI 이미지",
           capturedAt: "2035년 제안 장면",
         },
@@ -186,7 +194,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "소제창작촌 이전의 과거 상상 이미지",
         photo: {
           ...AI_PAST,
-          src: "/locations/generated/soje-creative-village-past-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/soje-creative-village-past-ai.jpg",
+          ),
           alt: "1960년대 철도 골목의 작은 작업실을 흑백 기록 사진처럼 상상한 AI 이미지",
           capturedAt: "1960년대 추정 장면",
         },
@@ -199,7 +209,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "소제창작촌 현재 사진",
         photo: {
           ...DAEJEON_ARCHIVE,
-          src: "/locations/soje-creative-village.jpg",
+          src: withBasePath("/locations/soje-creative-village.jpg"),
           alt: "낡은 미닫이문과 작은 간판이 남아 있는 소제창작촌 정면",
           capturedAt: "2024.08.05 촬영",
           sourceUrl:
@@ -214,7 +224,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "소제창작촌의 미래 비전 이미지",
         photo: {
           ...AI_FUTURE,
-          src: "/locations/generated/soje-creative-village-future-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/soje-creative-village-future-ai.jpg",
+          ),
           alt: "옛 건물의 표정을 보존한 2035년 동네 창작 공간을 상상한 AI 이미지",
           capturedAt: "2035년 제안 장면",
         },
@@ -241,7 +253,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "철도관사촌의 과거 상상 이미지",
         photo: {
           ...AI_PAST,
-          src: "/locations/generated/railway-residence-village-past-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/railway-residence-village-past-ai.jpg",
+          ),
           alt: "1930년대 낮은 철도 관사와 골목이 모인 마을을 상상한 흑백 AI 이미지",
           capturedAt: "1930년대 추정 장면",
         },
@@ -254,7 +268,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "철도관사촌 일대 현재 항공 사진",
         photo: {
           ...DAEJEON_ARCHIVE,
-          src: "/locations/railway-residence-village.jpg",
+          src: withBasePath("/locations/railway-residence-village.jpg"),
           alt: "낮은 지붕의 집과 골목이 모여 있는 소제동 일대 항공 전경",
           capturedAt: "2024.05.08 촬영",
           sourceUrl:
@@ -269,7 +283,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "철도관사촌의 미래 비전 이미지",
         photo: {
           ...AI_FUTURE,
-          src: "/locations/generated/railway-residence-village-future-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/railway-residence-village-future-ai.jpg",
+          ),
           alt: "낮은 지붕선과 생활 골목을 보존한 2035년 철도관사촌을 상상한 AI 이미지",
           capturedAt: "2035년 제안 장면",
         },
@@ -296,7 +312,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "풍류소제 활용 이전의 과거 상상 이미지",
         photo: {
           ...AI_PAST,
-          src: "/locations/generated/pungryu-soje-past-ai.jpg",
+          src: withBasePath("/locations/generated/pungryu-soje-past-ai.jpg"),
           alt: "1970년대 오래된 주택과 대나무 마당을 빛바랜 사진처럼 상상한 AI 이미지",
           capturedAt: "1970년대 추정 장면",
         },
@@ -309,7 +325,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "풍류소제 대나무 정원 현재 사진",
         photo: {
           ...DAEJEON_ARCHIVE,
-          src: "/locations/pungryu-soje.jpg",
+          src: withBasePath("/locations/pungryu-soje.jpg"),
           alt: "오래된 집 옆으로 대나무가 빽빽하게 자란 풍류소제 정원",
           capturedAt: "2024.10.04 촬영",
           sourceUrl:
@@ -324,7 +340,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "풍류소제의 미래 활용 이미지",
         photo: {
           ...AI_FUTURE,
-          src: "/locations/generated/pungryu-soje-future-ai.jpg",
+          src: withBasePath("/locations/generated/pungryu-soje-future-ai.jpg"),
           alt: "대나무와 기존 건물을 보존하며 작은 기록 전시가 더해진 2035년 풍류소제를 상상한 AI 이미지",
           capturedAt: "2035년 제안 장면",
         },
@@ -351,7 +367,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "대동천의 과거 상상 이미지",
         photo: {
           ...AI_PAST,
-          src: "/locations/generated/daedongcheon-cherry-road-past-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/daedongcheon-cherry-road-past-ai.jpg",
+          ),
           alt: "1950년대 자연 하천과 징검다리를 흑백 기록 사진처럼 상상한 AI 이미지",
           capturedAt: "1950년대 추정 장면",
         },
@@ -364,7 +382,7 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "대동천 벚꽃길 현재 사진",
         photo: {
           ...DAEJEON_ARCHIVE,
-          src: "/locations/daedongcheon-cherry-road.jpg",
+          src: withBasePath("/locations/daedongcheon-cherry-road.jpg"),
           alt: "벚꽃이 활짝 핀 대동천 양안과 산책하는 시민들",
           capturedAt: "2026.04.02 촬영",
           sourceUrl:
@@ -379,7 +397,9 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
         imageLabel: "대동천의 미래 수변 이미지",
         photo: {
           ...AI_FUTURE,
-          src: "/locations/generated/daedongcheon-cherry-road-future-ai.jpg",
+          src: withBasePath(
+            "/locations/generated/daedongcheon-cherry-road-future-ai.jpg",
+          ),
           alt: "풍부한 녹지와 무장애 산책로가 이어지는 2035년 대동천을 상상한 AI 이미지",
           capturedAt: "2035년 제안 장면",
         },

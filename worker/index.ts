@@ -1,6 +1,12 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { APP_BASE_PATH } from "../app/site-config";
+
+// The custom Worker wrapper must forward this build metadata so vinext's
+// standalone Node server can map base-path-prefixed _next/static requests.
+export const __basePath = APP_BASE_PATH;
+export const __assetPrefix = APP_BASE_PATH;
 
 interface Fetcher {
   fetch(input: Request): Promise<Response>;

@@ -60,9 +60,9 @@ cp .env.example .env
 docker compose up -d
 ```
 
-첫 실행 후에는 `http://서버IP:18080`에서 화면을 확인할 수 있습니다. Compose가
-기동할 때 로컬 이미지를 빌드하도록 설정되어 있으므로 소스 업데이트 후에도 같은
-명령을 사용합니다.
+첫 실행 후에는 `http://서버IP:18080/junhyeok/pj`에서 화면을 확인할 수 있습니다.
+Compose가 기동할 때 `APP_BASE_PATH`를 포함해 로컬 이미지를 빌드하도록 설정되어
+있으므로 소스 업데이트 후에도 같은 명령을 사용합니다.
 
 ```bash
 git pull --ff-only
