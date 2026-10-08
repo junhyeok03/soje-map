@@ -4,6 +4,7 @@ import {
   ARRIVAL_ENTER_METERS,
   ARRIVAL_EXIT_METERS,
   distanceMeters,
+  formatDistance,
   googleDirectionsUrl,
   interpolate,
   isAccurateEnough,
@@ -66,4 +67,10 @@ test("attaches the right direction particle to Korean place names", () => {
   assert.equal(withDirectionParticle("철갑교"), "철갑교로");
   assert.equal(withDirectionParticle("전통나래관"), "전통나래관으로");
   assert.equal(withDirectionParticle("대동천 벚꽃길"), "대동천 벚꽃길로");
+});
+
+test("formats walking distances in m below 1km and km above", () => {
+  assert.equal(formatDistance(72.4), "72m");
+  assert.equal(formatDistance(999.4), "999m");
+  assert.equal(formatDistance(10234), "10.2km");
 });

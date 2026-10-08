@@ -69,6 +69,11 @@ export function interpolate(from: LatLng, to: LatLng, progress: number): LatLng 
   return [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
 }
 
+export function formatDistance(meters: number): string {
+  if (Math.round(meters) < 1000) return `${Math.round(meters)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+}
+
 /** 받침 유무에 맞춰 "로/으로"를 붙인다. (ㄹ 받침은 "로") */
 export function withDirectionParticle(word: string): string {
   const code = word.charCodeAt(word.length - 1) - 0xac00;

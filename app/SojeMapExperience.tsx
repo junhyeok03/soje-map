@@ -23,6 +23,7 @@ import Image from "next/image";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   distanceMeters,
+  formatDistance,
   googleDirectionsUrl,
   isAccurateEnough,
   kakaoDirectionsUrl,
@@ -105,7 +106,7 @@ export function SojeMapExperience() {
   );
   const nextDistance =
     walk.position && nextTarget
-      ? Math.round(distanceMeters(walk.position, nextTarget.coordinates))
+      ? distanceMeters(walk.position, nextTarget.coordinates)
       : null;
   const arrivalLocation = SOJE_LOCATIONS.find(
     (location) => location.id === arrivalId,
@@ -265,7 +266,7 @@ export function SojeMapExperience() {
                       : allVisited
                         ? "6곳을 모두 방문했습니다"
                         : nextTarget && nextDistance !== null
-                          ? `다음 장소 ${nextTarget.shortName}까지 약 ${nextDistance}m`
+                          ? `다음 장소 ${nextTarget.shortName}까지 약 ${formatDistance(nextDistance)}`
                           : walk.mode === "sim"
                             ? "점을 끌어 옮기거나 아래 버튼을 눌러 보세요"
                             : "")}
