@@ -18,6 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "소제, 시간의 지도",
     description:
       "대전 소제동 철도관사촌의 과거와 현재, 미래를 만나는 인터랙티브 지도",
+    icons: {
+      icon: [{ url: withBasePath("/favicon.svg"), type: "image/svg+xml" }],
+    },
     openGraph: {
       title: "소제, 시간의 지도",
       description: "골목 위에 겹쳐진 세 개의 시간을 걷다",

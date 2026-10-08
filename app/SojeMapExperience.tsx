@@ -2,30 +2,157 @@
 
 import {
   ArrowDown,
+  Check,
   Clock3,
   Compass,
   ExternalLink,
+  Flag,
+  Footprints,
   Image as ImageIcon,
   Info,
+  LocateFixed,
+  MapPin,
   MapPinned,
   Maximize2,
+  Navigation,
   Route,
   Sparkles,
+  X,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  bearingDegrees,
+  compassLabel,
+  distanceMeters,
+  estimateWalkMinutes,
+  formatDistance,
+  googleDirectionsUrl,
+  isAccurateEnough,
+  kakaoDirectionsUrl,
+  resolveArrivalZone,
+  withDirectionParticle,
+  type DirectionsOrigin,
+  type LatLng,
+} from "./arrival";
 import { InteractiveMap } from "./InteractiveMap";
 import {
   ERA_LABELS,
   SOJE_LOCATIONS,
+  WALK_START,
   type Era,
 } from "./locations";
+import { useWalkTracker, type WalkStatus } from "./useWalkTracker";
 
 const ERA_ORDER: Era[] = ["past", "present", "future"];
+
+// 1차 리서치의 사용자 여정(대전역 하차 → 도보 진입)에 맞춰 시연은 대전역에서 출발한다.
+const SIM_START: LatLng = WALK_START.coordinates;
+
+// 이보다 멀면 도보 시간 대신 직선거리만 보여준다 (예: 학교에서 켠 현장 모드)
+const WALKABLE_GUIDE_METERS = 2000;
+
+const GPS_STATUS_TEXT: Partial<Record<WalkStatus, string>> = {
+  locating: "현재 위치를 찾는 중입니다",
+  denied: "위치 권한이 거부되었습니다. 시연 모드로 체험해 보세요.",
+  unavailable: "위치를 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  unsupported: "이 기기는 위치 기능을 지원하지 않습니다.",
+};
 
 export function SojeMapExperience() {
   const [activeId, setActiveId] = useState(SOJE_LOCATIONS[0].id);
   const [activeEra, setActiveEra] = useState<Era>("present");
+  const [visitedIds, setVisitedIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const [arrivalId, setArrivalId] = useState<string | null>(null);
+  const zoneIdRef = useRef<string | null>(null);
+  const visitedRef = useRef<ReadonlySet<string>>(visitedIds);
+
+  const handlePosition = useCallback(
+    (position: LatLng, accuracy: number | null) => {
+      if (!isAccurateEnough(accuracy)) return;
+
+      const nextZone = resolveArrivalZone(
+        zoneIdRef.current,
+        position,
+        SOJE_LOCATIONS,
+      );
+      if (nextZone === zoneIdRef.current) return;
+      zoneIdRef.current = nextZone;
+
+      if (nextZone && !visitedRef.current.has(nextZone)) {
+        const nextVisited = new Set(visitedRef.current).add(nextZone);
+        visitedRef.current = nextVisited;
+        setVisitedIds(nextVisited);
+        setArrivalId(nextZone);
+      }
+    },
+    [],
+  );
+
+  const walk = useWalkTracker(SIM_START, handlePosition);
+
+  const resetVisits = useCallback(() => {
+    zoneIdRef.current = null;
+    visitedRef.current = new Set();
+    setVisitedIds(visitedRef.current);
+    setArrivalId(null);
+  }, []);
+
+  const startWalk = useCallback(
+    (mode: "gps" | "sim") => {
+      resetVisits();
+      if (mode === "gps") walk.startGps();
+      else walk.startSim();
+    },
+    [resetVisits, walk],
+  );
+
+  const nextTarget = SOJE_LOCATIONS.find(
+    (location) => !visitedIds.has(location.id),
+  );
+  const nextDistance =
+    walk.position && nextTarget
+      ? distanceMeters(walk.position, nextTarget.coordinates)
+      : null;
+  const arrivalLocation = SOJE_LOCATIONS.find(
+    (location) => location.id === arrivalId,
+  );
+  const allVisited = visitedIds.size === SOJE_LOCATIONS.length;
+  const lowAccuracy =
+    walk.mode === "gps" &&
+    walk.status === "tracking" &&
+    !isAccurateEnough(walk.accuracy);
+  const guideText =
+    walk.position && nextTarget && nextDistance !== null
+      ? `${nextTarget.shortName} · ${compassLabel(
+          bearingDegrees(walk.position, nextTarget.coordinates),
+        )} 직선 ${formatDistance(nextDistance)}${
+          nextDistance <= WALKABLE_GUIDE_METERS
+            ? ` · 도보 약 ${estimateWalkMinutes(nextDistance)}분`
+            : ""
+        }`
+      : null;
+  const startsAtStation =
+    walk.mode === "sim" &&
+    visitedIds.size === 0 &&
+    walk.position !== null &&
+    distanceMeters(walk.position, WALK_START.coordinates) < 15;
+
+  // 지도의 회색 점(시연 위치 또는 정확한 GPS 위치)을 길찾기 출발지로 쓴다.
+  const directionsOrigin: DirectionsOrigin | undefined =
+    walk.position &&
+    (walk.mode === "sim" || (walk.mode === "gps" && !lowAccuracy))
+      ? { name: "내 위치", coordinates: walk.position }
+      : undefined;
+
+  const openArrivalPast = useCallback(() => {
+    if (!arrivalId) return;
+    setActiveId(arrivalId);
+    setActiveEra("past");
+    setArrivalId(null);
+  }, [arrivalId]);
 
   const activeLocation = useMemo(
     () =>
@@ -100,6 +227,15 @@ export function SojeMapExperience() {
             locations={SOJE_LOCATIONS}
             activeId={activeId}
             onSelect={selectLocation}
+            visitedIds={visitedIds}
+            userPosition={walk.position}
+            userAccuracy={walk.mode === "gps" ? walk.accuracy : null}
+            userDraggable={walk.mode === "sim"}
+            onUserMove={walk.moveTo}
+            guideTarget={
+              walk.mode !== "off" && nextTarget ? nextTarget.coordinates : null
+            }
+            startPoint={walk.mode === "off" ? null : WALK_START}
           />
 
           <div className="map-topbar">
@@ -116,7 +252,131 @@ export function SojeMapExperience() {
             </div>
           </div>
 
-          <div className="map-instruction">
+          <div className="walk-panel" aria-label="걸으며 체험하기">
+            {walk.mode === "off" ? (
+              <>
+                <span className="walk-title">
+                  <Footprints size={15} aria-hidden="true" />
+                  걸으며 체험하기
+                </span>
+                <div className="walk-actions">
+                  <button type="button" onClick={() => startWalk("gps")}>
+                    <LocateFixed size={15} aria-hidden="true" />
+                    현장 모드
+                  </button>
+                  <button type="button" onClick={() => startWalk("sim")}>
+                    <MapPin size={15} aria-hidden="true" />
+                    시연 모드
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="walk-head">
+                  <span className="walk-title">
+                    {walk.mode === "gps" ? (
+                      <LocateFixed size={15} aria-hidden="true" />
+                    ) : (
+                      <MapPin size={15} aria-hidden="true" />
+                    )}
+                    {walk.mode === "gps" ? "현장 모드" : "시연 모드"}
+                  </span>
+                  <span className="walk-progress">
+                    방문 {visitedIds.size} / {SOJE_LOCATIONS.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="walk-stop"
+                    onClick={walk.stop}
+                    aria-label="체험 종료"
+                  >
+                    <X size={15} aria-hidden="true" />
+                  </button>
+                </div>
+                <p className="walk-status" aria-live="polite">
+                  {GPS_STATUS_TEXT[walk.status] ??
+                    (lowAccuracy
+                      ? `위치 정확도가 낮아요 (±${Math.round(walk.accuracy ?? 0)}m). 트인 곳으로 이동해 주세요.`
+                      : allVisited
+                        ? "6곳을 모두 방문했습니다"
+                        : "")}
+                </p>
+                {!GPS_STATUS_TEXT[walk.status] && !allVisited && guideText ? (
+                  <p className="walk-guide">
+                    <Navigation size={14} aria-hidden="true" />
+                    <span>
+                      {startsAtStation ? (
+                        <small>{WALK_START.name}에서 출발</small>
+                      ) : null}
+                      <small>다음 장소</small>
+                      {guideText}
+                    </span>
+                  </p>
+                ) : null}
+                {walk.mode === "sim" ? (
+                  <p className="walk-hint">회색 점을 끌어 위치를 옮길 수 있어요</p>
+                ) : null}
+                {walk.mode === "sim" && nextTarget ? (
+                  <button
+                    type="button"
+                    className="walk-next"
+                    onClick={() => walk.walkTo(nextTarget.coordinates)}
+                    disabled={walk.walking}
+                  >
+                    <Footprints size={15} aria-hidden="true" />
+                    {walk.walking ? "걷는 중…" : `${withDirectionParticle(nextTarget.shortName)} 걷기`}
+                  </button>
+                ) : null}
+              </>
+            )}
+          </div>
+
+          {arrivalLocation ? (
+            <div
+              className="arrival-card"
+              role="dialog"
+              aria-live="assertive"
+              aria-labelledby="arrival-title"
+            >
+              <button
+                type="button"
+                className="arrival-close"
+                onClick={() => setArrivalId(null)}
+                aria-label="도착 안내 닫기"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+              <span className="arrival-kicker">
+                {allVisited ? (
+                  <Flag size={14} aria-hidden="true" />
+                ) : (
+                  <MapPin size={14} aria-hidden="true" />
+                )}
+                도착 · {String(arrivalLocation.order).padStart(2, "0")}{" "}
+                {arrivalLocation.name}
+              </span>
+              <h3 id="arrival-title">{arrivalLocation.arrival.headline}</h3>
+              <p>{arrivalLocation.arrival.message}</p>
+              {allVisited ? (
+                <p className="arrival-complete">
+                  <Check size={14} aria-hidden="true" />
+                  소제동 기억 산책 6곳을 모두 걸었습니다.
+                </p>
+              ) : null}
+              <button
+                type="button"
+                className="arrival-action"
+                onClick={openArrivalPast}
+              >
+                <Clock3 size={15} aria-hidden="true" />
+                이 자리의 과거 보기
+              </button>
+            </div>
+          ) : null}
+
+          <div
+            className={`map-instruction${walk.mode === "off" ? "" : " is-hidden"}`}
+          >
             <span className="instruction-icon" aria-hidden="true">
               <ArrowDown size={18} />
             </span>
@@ -137,7 +397,13 @@ export function SojeMapExperience() {
                 onClick={() => selectLocation(location.id)}
                 aria-pressed={location.id === activeId}
               >
-                <span>{location.order}</span>
+                <span>
+                  {visitedIds.has(location.id) ? (
+                    <Check size={13} aria-label="방문함" />
+                  ) : (
+                    location.order
+                  )}
+                </span>
                 {location.shortName}
               </button>
             ))}
@@ -261,6 +527,43 @@ export function SojeMapExperience() {
               <h3>{eraContent.title}</h3>
               <p>{eraContent.description}</p>
             </div>
+          </div>
+
+          <div className="direction-links" aria-label="길찾기">
+            <span>
+              <Navigation size={15} aria-hidden="true" />
+              길찾기
+            </span>
+            <a
+              href={kakaoDirectionsUrl(
+                activeLocation.name,
+                activeLocation.coordinates,
+                directionsOrigin,
+              )}
+              target="_blank"
+              rel="noreferrer"
+            >
+              카카오맵
+              <ExternalLink size={12} aria-hidden="true" />
+            </a>
+            <a
+              href={googleDirectionsUrl(
+                activeLocation.coordinates,
+                directionsOrigin,
+              )}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Google 지도
+              <ExternalLink size={12} aria-hidden="true" />
+            </a>
+            <small className="direction-origin">
+              {directionsOrigin
+                ? walk.mode === "sim"
+                  ? "출발지: 지도의 회색 점 (시연 위치)"
+                  : "출발지: 현재 GPS 위치"
+                : "출발지는 지도 앱에서 정해집니다. 걸으며 체험하기를 켜면 회색 점이 출발지가 됩니다."}
+            </small>
           </div>
 
           <div className="story-footer">

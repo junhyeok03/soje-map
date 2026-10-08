@@ -1,3 +1,4 @@
+import type { LatLng } from "./arrival";
 import { withBasePath } from "./site-config";
 
 export type Era = "past" | "present" | "future";
@@ -30,6 +31,10 @@ export type SojeLocation = {
   coordinates: [number, number];
   walkMinutes: number;
   summary: string;
+  arrival: {
+    headline: string;
+    message: string;
+  };
   eras: Record<Era, EraContent>;
 };
 
@@ -57,6 +62,13 @@ const AI_FUTURE = {
   usageNote: "AI 생성 · 확정 계획 아님",
 };
 
+// 대전역 역사 건물 중심. OpenStreetMap(36.332178, 127.4346057)과
+// 위키백과(36.3319, 127.4345) 좌표를 대조해 OSM 값을 사용했다.
+export const WALK_START: { name: string; coordinates: LatLng } = {
+  name: "대전역",
+  coordinates: [36.332178, 127.4346057],
+};
+
 export const SOJE_LOCATIONS: SojeLocation[] = [
   {
     id: "traditional-narae-hall",
@@ -69,6 +81,11 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
     walkMinutes: 0,
     summary:
       "대전의 무형유산을 전시와 교육으로 소개하는 복합문화공간입니다. 소제동 기억 산책의 시작점으로 삼았습니다.",
+    arrival: {
+      headline: "이 일대에는 호수가 있었습니다",
+      message:
+        "송시열이 대전의 명소로 꼽았다는 소제호가 이 일대에 있었습니다. 1927년 호수가 매립된 뒤 그 위에 철도 관사촌이 들어섰습니다.",
+    },
     eras: {
       past: {
         year: "1920년대 상상",
@@ -128,6 +145,11 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
     walkMinutes: 2,
     summary:
       "철갑길과 대동천을 잇는 실제 교량입니다. 골목의 밀도에서 수변의 열린 풍경으로 시야가 바뀌는 지점입니다.",
+    arrival: {
+      headline: "골목에서 물길로 건너갑니다",
+      message:
+        "다리를 건너는 순간 촘촘한 골목의 시간이 대동천의 열린 풍경으로 바뀝니다. 잠시 멈춰 양쪽 풍경을 비교해 보세요.",
+    },
     eras: {
       past: {
         year: "1930년대 상상",
@@ -185,6 +207,11 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
     walkMinutes: 7,
     summary:
       "철도 관사 공간을 바탕으로 예술가와 주민의 활동이 이어진 창작 공간입니다. 작은 간판과 오래된 건물의 표정을 그대로 만날 수 있습니다.",
+    arrival: {
+      headline: "관사가 작업실이 되었습니다",
+      message:
+        "철도 관사였던 공간에 예술가와 주민의 활동이 더해졌습니다. 작은 간판과 오래된 벽의 표정을 찾아보세요.",
+    },
     eras: {
       past: {
         year: "1960년대 상상",
@@ -244,6 +271,11 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
     walkMinutes: 10,
     summary:
       "대전역 동쪽에 남은 철도 관사군입니다. 한 채가 아니라 골목과 집들이 모여 만든 생활 경관 전체를 하나의 장소로 보았습니다.",
+    arrival: {
+      headline: "철도 사람들이 살던 마을입니다",
+      message:
+        "1920~40년대 대전역에서 일하던 철도 종사자들이 이 골목의 관사에 살았습니다. 낮은 지붕선이 이어지는 풍경이 그 흔적입니다.",
+    },
     eras: {
       past: {
         year: "1930년대 상상",
@@ -303,6 +335,11 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
     walkMinutes: 12,
     summary:
       "구 풍뉴가에서 현재 풍류소제로 이어진 대나무 정원의 공간입니다. 관사 활용과 상업 공간의 변화를 함께 살펴보는 지점입니다.",
+    arrival: {
+      headline: "오래된 집 안의 대나무 정원",
+      message:
+        "관사를 고쳐 쓴 공간 안에 대나무 정원이 자리합니다. 집의 구조가 어떻게 남고 바뀌었는지 살펴보세요.",
+    },
     eras: {
       past: {
         year: "1970년대 상상",
@@ -358,6 +395,11 @@ export const SOJE_LOCATIONS: SojeLocation[] = [
     walkMinutes: 16,
     summary:
       "소제동 동쪽을 따라 흐르는 대동천의 보행 구간입니다. 골목 탐방을 수변의 계절 풍경으로 마무리하는 지점입니다.",
+    arrival: {
+      headline: "산책의 마지막, 대동천입니다",
+      message:
+        "소제동 동쪽을 따라 흐르는 대동천에서 골목 탐방을 마무리합니다. 봄이면 이 길에 벚꽃이 이어집니다.",
+    },
     eras: {
       past: {
         year: "1950년대 상상",
