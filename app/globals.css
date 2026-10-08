@@ -1177,6 +1177,61 @@ a {
   display: none;
 }
 
+.walk-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: rgba(121, 129, 148, 0.12);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.walk-guide svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--slate);
+}
+
+.walk-guide span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.walk-guide small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.walk-hint {
+  margin: -3px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.start-marker {
+  border: 0;
+  background: transparent;
+}
+
+.start-marker span {
+  display: grid;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 4px 10px rgba(34, 35, 31, 0.25);
+  color: var(--white);
+  font: 800 11px/1 var(--sans);
+}
+
 .user-marker {
   border: 0;
   background: transparent;
@@ -1327,6 +1382,14 @@ a {
   text-decoration: none;
 }
 
+.direction-origin {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
 .direction-links a:hover,
 .direction-links a:focus-visible {
   background: rgba(106, 45, 18, 0.07);
@@ -1468,6 +1531,10 @@ a {
     top: 68px;
     left: 12px;
     width: min(290px, calc(100% - 24px));
+  }
+
+  .walk-hint {
+    display: none;
   }
 
   .arrival-card {

@@ -3,7 +3,10 @@ import test from "node:test";
 import {
   ARRIVAL_ENTER_METERS,
   ARRIVAL_EXIT_METERS,
+  bearingDegrees,
+  compassLabel,
   distanceMeters,
+  estimateWalkMinutes,
   formatDistance,
   googleDirectionsUrl,
   interpolate,
@@ -73,4 +76,28 @@ test("formats walking distances in m below 1km and km above", () => {
   assert.equal(formatDistance(72.4), "72m");
   assert.equal(formatDistance(999.4), "999m");
   assert.equal(formatDistance(10234), "10.2km");
+});
+
+test("starts directions from the gray dot when an origin is given", () => {
+  const origin = { name: "내 위치", coordinates: [36.33, 127.43] };
+  assert.equal(
+    kakaoDirectionsUrl("철갑교", [36.1, 127.2], origin),
+    "https://map.kakao.com/link/from/%EB%82%B4%20%EC%9C%84%EC%B9%98,36.33,127.43/to/%EC%B2%A0%EA%B0%91%EA%B5%90,36.1,127.2",
+  );
+  assert.equal(
+    googleDirectionsUrl([36.1, 127.2], origin),
+    "https://www.google.com/maps/dir/?api=1&origin=36.33%2C127.43&destination=36.1%2C127.2&travelmode=walking",
+  );
+});
+
+test("describes the direction and walking time to the next place", () => {
+  const station = [36.332178, 127.4346057];
+  const bearing = bearingDegrees(station, NARAE.coordinates);
+  assert.equal(compassLabel(bearing), "북동쪽");
+  assert.equal(compassLabel(0), "북쪽");
+  assert.equal(compassLabel(350), "북쪽");
+  assert.equal(compassLabel(180), "남쪽");
+  // 직선 400m × 우회 1.3 ÷ 분당 67m ≈ 8분
+  assert.equal(estimateWalkMinutes(400), 8);
+  assert.equal(estimateWalkMinutes(10), 1);
 });

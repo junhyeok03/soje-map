@@ -22,27 +22,35 @@ import {
 import Image from "next/image";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
+  bearingDegrees,
+  compassLabel,
   distanceMeters,
+  estimateWalkMinutes,
   formatDistance,
   googleDirectionsUrl,
   isAccurateEnough,
   kakaoDirectionsUrl,
   resolveArrivalZone,
   withDirectionParticle,
+  type DirectionsOrigin,
   type LatLng,
 } from "./arrival";
 import { InteractiveMap } from "./InteractiveMap";
 import {
   ERA_LABELS,
   SOJE_LOCATIONS,
+  WALK_START,
   type Era,
 } from "./locations";
 import { useWalkTracker, type WalkStatus } from "./useWalkTracker";
 
 const ERA_ORDER: Era[] = ["past", "present", "future"];
 
-// 시연 모드 출발점: 전통나래관 서쪽 약 70m (도착 반경 밖)
-const SIM_START: LatLng = [36.3349, 127.4366];
+// 1차 리서치의 사용자 여정(대전역 하차 → 도보 진입)에 맞춰 시연은 대전역에서 출발한다.
+const SIM_START: LatLng = WALK_START.coordinates;
+
+// 이보다 멀면 도보 시간 대신 직선거리만 보여준다 (예: 학교에서 켠 현장 모드)
+const WALKABLE_GUIDE_METERS = 2000;
 
 const GPS_STATUS_TEXT: Partial<Record<WalkStatus, string>> = {
   locating: "현재 위치를 찾는 중입니다",
@@ -116,6 +124,28 @@ export function SojeMapExperience() {
     walk.mode === "gps" &&
     walk.status === "tracking" &&
     !isAccurateEnough(walk.accuracy);
+  const guideText =
+    walk.position && nextTarget && nextDistance !== null
+      ? `${nextTarget.shortName} · ${compassLabel(
+          bearingDegrees(walk.position, nextTarget.coordinates),
+        )} 직선 ${formatDistance(nextDistance)}${
+          nextDistance <= WALKABLE_GUIDE_METERS
+            ? ` · 도보 약 ${estimateWalkMinutes(nextDistance)}분`
+            : ""
+        }`
+      : null;
+  const startsAtStation =
+    walk.mode === "sim" &&
+    visitedIds.size === 0 &&
+    walk.position !== null &&
+    distanceMeters(walk.position, WALK_START.coordinates) < 15;
+
+  // 지도의 회색 점(시연 위치 또는 정확한 GPS 위치)을 길찾기 출발지로 쓴다.
+  const directionsOrigin: DirectionsOrigin | undefined =
+    walk.position &&
+    (walk.mode === "sim" || (walk.mode === "gps" && !lowAccuracy))
+      ? { name: "내 위치", coordinates: walk.position }
+      : undefined;
 
   const openArrivalPast = useCallback(() => {
     if (!arrivalId) return;
@@ -202,6 +232,10 @@ export function SojeMapExperience() {
             userAccuracy={walk.mode === "gps" ? walk.accuracy : null}
             userDraggable={walk.mode === "sim"}
             onUserMove={walk.moveTo}
+            guideTarget={
+              walk.mode !== "off" && nextTarget ? nextTarget.coordinates : null
+            }
+            startPoint={walk.mode === "off" ? null : WALK_START}
           />
 
           <div className="map-topbar">
@@ -265,12 +299,23 @@ export function SojeMapExperience() {
                       ? `위치 정확도가 낮아요 (±${Math.round(walk.accuracy ?? 0)}m). 트인 곳으로 이동해 주세요.`
                       : allVisited
                         ? "6곳을 모두 방문했습니다"
-                        : nextTarget && nextDistance !== null
-                          ? `다음 장소 ${nextTarget.shortName}까지 약 ${formatDistance(nextDistance)}`
-                          : walk.mode === "sim"
-                            ? "점을 끌어 옮기거나 아래 버튼을 눌러 보세요"
-                            : "")}
+                        : "")}
                 </p>
+                {!GPS_STATUS_TEXT[walk.status] && !allVisited && guideText ? (
+                  <p className="walk-guide">
+                    <Navigation size={14} aria-hidden="true" />
+                    <span>
+                      {startsAtStation ? (
+                        <small>{WALK_START.name}에서 출발</small>
+                      ) : null}
+                      <small>다음 장소</small>
+                      {guideText}
+                    </span>
+                  </p>
+                ) : null}
+                {walk.mode === "sim" ? (
+                  <p className="walk-hint">회색 점을 끌어 위치를 옮길 수 있어요</p>
+                ) : null}
                 {walk.mode === "sim" && nextTarget ? (
                   <button
                     type="button"
@@ -493,6 +538,7 @@ export function SojeMapExperience() {
               href={kakaoDirectionsUrl(
                 activeLocation.name,
                 activeLocation.coordinates,
+                directionsOrigin,
               )}
               target="_blank"
               rel="noreferrer"
@@ -501,13 +547,23 @@ export function SojeMapExperience() {
               <ExternalLink size={12} aria-hidden="true" />
             </a>
             <a
-              href={googleDirectionsUrl(activeLocation.coordinates)}
+              href={googleDirectionsUrl(
+                activeLocation.coordinates,
+                directionsOrigin,
+              )}
               target="_blank"
               rel="noreferrer"
             >
               Google 지도
               <ExternalLink size={12} aria-hidden="true" />
             </a>
+            <small className="direction-origin">
+              {directionsOrigin
+                ? walk.mode === "sim"
+                  ? "출발지: 지도의 회색 점 (시연 위치)"
+                  : "출발지: 현재 GPS 위치"
+                : "출발지는 지도 앱에서 정해집니다. 걸으며 체험하기를 켜면 회색 점이 출발지가 됩니다."}
+            </small>
           </div>
 
           <div className="story-footer">

@@ -5,8 +5,9 @@ import type {
   Circle as LeafletCircle,
   Map as LeafletMap,
   Marker as LeafletMarker,
+  Polyline as LeafletPolyline,
 } from "leaflet";
-import type { LatLng } from "./arrival";
+import { distanceMeters, type LatLng } from "./arrival";
 import type { SojeLocation } from "./locations";
 
 type LeafletModule = typeof import("leaflet");
@@ -20,7 +21,12 @@ type InteractiveMapProps = {
   userAccuracy: number | null;
   userDraggable: boolean;
   onUserMove: (position: LatLng) => void;
+  guideTarget: LatLng | null;
+  startPoint: { name: string; coordinates: LatLng } | null;
 };
+
+// 이 거리 안에 있을 때만 내 위치가 보이도록 지도 범위를 넓힌다 (멀리서 켠 GPS 제외)
+const FIT_USER_WITHIN_METERS = 2000;
 
 export function InteractiveMap({
   locations,
@@ -31,6 +37,8 @@ export function InteractiveMap({
   userAccuracy,
   userDraggable,
   onUserMove,
+  guideTarget,
+  startPoint,
 }: InteractiveMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -38,6 +46,8 @@ export function InteractiveMap({
   const markerRefs = useRef(new Map<string, LeafletMarker>());
   const userMarkerRef = useRef<LeafletMarker | null>(null);
   const accuracyCircleRef = useRef<LeafletCircle | null>(null);
+  const guideLineRef = useRef<LeafletPolyline | null>(null);
+  const startMarkerRef = useRef<LeafletMarker | null>(null);
   const onSelectRef = useRef(onSelect);
   const onUserMoveRef = useRef(onUserMove);
   const activeIdRef = useRef(activeId);
@@ -138,6 +148,8 @@ export function InteractiveMap({
       markers.clear();
       userMarkerRef.current = null;
       accuracyCircleRef.current = null;
+      guideLineRef.current = null;
+      startMarkerRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
       setMapReady(false);
@@ -180,6 +192,27 @@ export function InteractiveMap({
         onUserMoveRef.current([lat, lng]);
       });
       userMarkerRef.current = marker;
+
+      const nearest = Math.min(
+        ...locations.map((location) =>
+          distanceMeters(userPosition, location.coordinates),
+        ),
+      );
+      if (
+        nearest <= FIT_USER_WITHIN_METERS &&
+        !map.getBounds().pad(-0.15).contains(userPosition)
+      ) {
+        map.fitBounds(
+          L.latLngBounds(locations.map((location) => location.coordinates)).extend(
+            userPosition,
+          ),
+          {
+            paddingTopLeft: [40, 190],
+            paddingBottomRight: [40, 90],
+            maxZoom: 17,
+          },
+        );
+      }
     } else {
       userMarkerRef.current.setLatLng(userPosition);
     }
@@ -202,7 +235,55 @@ export function InteractiveMap({
       accuracyCircleRef.current?.remove();
       accuracyCircleRef.current = null;
     }
-  }, [mapReady, userPosition, userAccuracy]);
+  }, [mapReady, userPosition, userAccuracy, locations]);
+
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    if (!mapReady || !L || !map) return;
+
+    if (!userPosition || !guideTarget) {
+      guideLineRef.current?.remove();
+      guideLineRef.current = null;
+      return;
+    }
+
+    const points: LatLng[] = [userPosition, guideTarget];
+    if (!guideLineRef.current) {
+      guideLineRef.current = L.polyline(points, {
+        className: "guide-line",
+        color: "#798194",
+        weight: 3,
+        opacity: 0.9,
+        dashArray: "2 8",
+        lineCap: "round",
+        interactive: false,
+      }).addTo(map);
+    } else {
+      guideLineRef.current.setLatLngs(points);
+    }
+  }, [mapReady, userPosition, guideTarget]);
+
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    if (!mapReady || !L || !map) return;
+
+    startMarkerRef.current?.remove();
+    startMarkerRef.current = null;
+    if (!startPoint) return;
+
+    startMarkerRef.current = L.marker(startPoint.coordinates, {
+      icon: L.divIcon({
+        className: "start-marker",
+        html: `<span>${startPoint.name}</span>`,
+        iconSize: [56, 24],
+        iconAnchor: [28, 34],
+      }),
+      interactive: false,
+      keyboard: false,
+    }).addTo(map);
+  }, [mapReady, startPoint]);
 
   useEffect(() => {
     const marker = userMarkerRef.current;

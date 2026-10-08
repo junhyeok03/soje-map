@@ -60,6 +60,34 @@ export function resolveArrivalZone(
   return null;
 }
 
+const COMPASS_LABELS = ["북", "북동", "동", "남동", "남", "남서", "서", "북서"];
+
+export function bearingDegrees(from: LatLng, to: LatLng): number {
+  const lat1 = toRadians(from[0]);
+  const lat2 = toRadians(to[0]);
+  const dLng = toRadians(to[1] - from[1]);
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+export function compassLabel(degrees: number): string {
+  return `${COMPASS_LABELS[Math.round(degrees / 45) % 8]}쪽`;
+}
+
+// 골목을 돌아가는 실제 경로는 직선보다 길어 1.3배로 보정, 보행 속도 분당 67m(시속 4km)
+const DETOUR_FACTOR = 1.3;
+const WALK_METERS_PER_MINUTE = 67;
+
+export function estimateWalkMinutes(straightMeters: number): number {
+  return Math.max(
+    1,
+    Math.round((straightMeters * DETOUR_FACTOR) / WALK_METERS_PER_MINUTE),
+  );
+}
+
 export function isAccurateEnough(accuracyMeters: number | null): boolean {
   return accuracyMeters === null || accuracyMeters <= MAX_GPS_ACCURACY_METERS;
 }
@@ -82,15 +110,33 @@ export function withDirectionParticle(word: string): string {
   return `${word}${finalConsonant === 0 || finalConsonant === 8 ? "로" : "으로"}`;
 }
 
-export function kakaoDirectionsUrl(name: string, [lat, lng]: LatLng): string {
-  return `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`;
+export type DirectionsOrigin = {
+  name: string;
+  coordinates: LatLng;
+};
+
+function kakaoPoint(name: string, [lat, lng]: LatLng): string {
+  return `${encodeURIComponent(name)},${lat},${lng}`;
 }
 
-export function googleDirectionsUrl([lat, lng]: LatLng): string {
-  const params = new URLSearchParams({
-    api: "1",
-    destination: `${lat},${lng}`,
-    travelmode: "walking",
-  });
+export function kakaoDirectionsUrl(
+  name: string,
+  destination: LatLng,
+  origin?: DirectionsOrigin,
+): string {
+  const to = kakaoPoint(name, destination);
+  return origin
+    ? `https://map.kakao.com/link/from/${kakaoPoint(origin.name, origin.coordinates)}/to/${to}`
+    : `https://map.kakao.com/link/to/${to}`;
+}
+
+export function googleDirectionsUrl(
+  [lat, lng]: LatLng,
+  origin?: DirectionsOrigin,
+): string {
+  const params = new URLSearchParams({ api: "1" });
+  if (origin) params.set("origin", origin.coordinates.join(","));
+  params.set("destination", `${lat},${lng}`);
+  params.set("travelmode", "walking");
   return `https://www.google.com/maps/dir/?${params}`;
 }

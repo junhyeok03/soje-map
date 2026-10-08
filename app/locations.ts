@@ -1,3 +1,4 @@
+import type { LatLng } from "./arrival";
 import { withBasePath } from "./site-config";
 
 export type Era = "past" | "present" | "future";
@@ -59,6 +60,13 @@ const AI_FUTURE = {
   credit: "AI 미래 비전",
   kind: "ai" as const,
   usageNote: "AI 생성 · 확정 계획 아님",
+};
+
+// 대전역 역사 건물 중심. OpenStreetMap(36.332178, 127.4346057)과
+// 위키백과(36.3319, 127.4345) 좌표를 대조해 OSM 값을 사용했다.
+export const WALK_START: { name: string; coordinates: LatLng } = {
+  name: "대전역",
+  coordinates: [36.332178, 127.4346057],
 };
 
 export const SOJE_LOCATIONS: SojeLocation[] = [

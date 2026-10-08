@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { interpolate, type LatLng } from "./arrival";
+import { distanceMeters, interpolate, type LatLng } from "./arrival";
 
 export type WalkMode = "off" | "gps" | "sim";
 
@@ -13,7 +13,10 @@ export type WalkStatus =
   | "unavailable"
   | "unsupported";
 
-const WALK_DURATION_MS = 2600;
+// 시연용 걷기 애니메이션: 1m당 8ms, 2~5초 사이
+function walkDurationMs(meters: number): number {
+  return Math.min(Math.max(meters * 8, 2000), 5000);
+}
 
 type PositionListener = (position: LatLng, accuracy: number | null) => void;
 
@@ -119,10 +122,11 @@ export function useWalkTracker(simStart: LatLng, onPosition: PositionListener) {
       }
 
       const startedAt = performance.now();
+      const duration = walkDurationMs(distanceMeters(from, target));
       setWalking(true);
 
       const step = (now: number) => {
-        const progress = (now - startedAt) / WALK_DURATION_MS;
+        const progress = (now - startedAt) / duration;
         report(interpolate(from, target, progress), null);
         if (progress < 1) {
           frameRef.current = requestAnimationFrame(step);
