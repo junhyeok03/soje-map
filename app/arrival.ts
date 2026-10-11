@@ -125,8 +125,9 @@ export function kakaoDirectionsUrl(
   origin?: DirectionsOrigin,
 ): string {
   const to = kakaoPoint(name, destination);
+  // 출발지가 있으면 도보 모드로 연다. (link/from/to는 자동차 모드로 열린다)
   return origin
-    ? `https://map.kakao.com/link/from/${kakaoPoint(origin.name, origin.coordinates)}/to/${to}`
+    ? `https://map.kakao.com/link/by/walk/${kakaoPoint(origin.name, origin.coordinates)}/${to}`
     : `https://map.kakao.com/link/to/${to}`;
 }
 
