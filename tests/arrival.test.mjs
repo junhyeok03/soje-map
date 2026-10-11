@@ -82,7 +82,7 @@ test("starts directions from the gray dot when an origin is given", () => {
   const origin = { name: "내 위치", coordinates: [36.33, 127.43] };
   assert.equal(
     kakaoDirectionsUrl("철갑교", [36.1, 127.2], origin),
-    "https://map.kakao.com/link/from/%EB%82%B4%20%EC%9C%84%EC%B9%98,36.33,127.43/to/%EC%B2%A0%EA%B0%91%EA%B5%90,36.1,127.2",
+    "https://map.kakao.com/link/by/walk/%EB%82%B4%20%EC%9C%84%EC%B9%98,36.33,127.43/%EC%B2%A0%EA%B0%91%EA%B5%90,36.1,127.2",
   );
   assert.equal(
     googleDirectionsUrl([36.1, 127.2], origin),

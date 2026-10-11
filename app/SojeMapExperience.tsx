@@ -31,6 +31,7 @@ import {
   isAccurateEnough,
   kakaoDirectionsUrl,
   resolveArrivalZone,
+  routeToward,
   withDirectionParticle,
   type DirectionsOrigin,
   type LatLng,
@@ -43,6 +44,7 @@ import {
   type Era,
 } from "./locations";
 import { useWalkTracker, type WalkStatus } from "./useWalkTracker";
+import { WALK_ROUTES } from "./walkRoutes";
 
 const ERA_ORDER: Era[] = ["past", "present", "future"];
 
@@ -65,7 +67,9 @@ export function SojeMapExperience() {
   const [visitedIds, setVisitedIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-  const [arrivalId, setArrivalId] = useState<string | null>(null);
+  // 한 번 걷는 동안 여러 장소를 지나면 도착 카드를 차례로 보여준다.
+  const [arrivalQueue, setArrivalQueue] = useState<string[]>([]);
+  const arrivalId = arrivalQueue[0] ?? null;
   const zoneIdRef = useRef<string | null>(null);
   const visitedRef = useRef<ReadonlySet<string>>(visitedIds);
 
@@ -85,7 +89,7 @@ export function SojeMapExperience() {
         const nextVisited = new Set(visitedRef.current).add(nextZone);
         visitedRef.current = nextVisited;
         setVisitedIds(nextVisited);
-        setArrivalId(nextZone);
+        setArrivalQueue((queue) => [...queue, nextZone]);
       }
     },
     [],
@@ -97,7 +101,7 @@ export function SojeMapExperience() {
     zoneIdRef.current = null;
     visitedRef.current = new Set();
     setVisitedIds(visitedRef.current);
-    setArrivalId(null);
+    setArrivalQueue([]);
   }, []);
 
   const startWalk = useCallback(
@@ -120,6 +124,7 @@ export function SojeMapExperience() {
     (location) => location.id === arrivalId,
   );
   const allVisited = visitedIds.size === SOJE_LOCATIONS.length;
+  const showCompletion = allVisited && arrivalQueue.length === 1;
   const lowAccuracy =
     walk.mode === "gps" &&
     walk.status === "tracking" &&
@@ -133,6 +138,15 @@ export function SojeMapExperience() {
             ? ` · 도보 약 ${estimateWalkMinutes(nextDistance)}분`
             : ""
         }`
+      : null;
+  // 다음 장소까지 실제 도보 경로 (경로에서 멀면 직선)
+  const walkPath =
+    walk.position && nextTarget
+      ? routeToward(
+          walk.position,
+          nextTarget.coordinates,
+          WALK_ROUTES[nextTarget.id],
+        )
       : null;
   const startsAtStation =
     walk.mode === "sim" &&
@@ -151,8 +165,12 @@ export function SojeMapExperience() {
     if (!arrivalId) return;
     setActiveId(arrivalId);
     setActiveEra("past");
-    setArrivalId(null);
+    setArrivalQueue((queue) => queue.slice(1));
   }, [arrivalId]);
+
+  const closeArrival = useCallback(() => {
+    setArrivalQueue((queue) => queue.slice(1));
+  }, []);
 
   const activeLocation = useMemo(
     () =>
@@ -232,9 +250,7 @@ export function SojeMapExperience() {
             userAccuracy={walk.mode === "gps" ? walk.accuracy : null}
             userDraggable={walk.mode === "sim"}
             onUserMove={walk.moveTo}
-            guideTarget={
-              walk.mode !== "off" && nextTarget ? nextTarget.coordinates : null
-            }
+            guidePath={walk.mode !== "off" ? walkPath : null}
             startPoint={walk.mode === "off" ? null : WALK_START}
           />
 
@@ -320,7 +336,7 @@ export function SojeMapExperience() {
                   <button
                     type="button"
                     className="walk-next"
-                    onClick={() => walk.walkTo(nextTarget.coordinates)}
+                    onClick={() => walkPath && walk.walkAlong(walkPath)}
                     disabled={walk.walking}
                   >
                     <Footprints size={15} aria-hidden="true" />
@@ -341,13 +357,13 @@ export function SojeMapExperience() {
               <button
                 type="button"
                 className="arrival-close"
-                onClick={() => setArrivalId(null)}
+                onClick={closeArrival}
                 aria-label="도착 안내 닫기"
               >
                 <X size={16} aria-hidden="true" />
               </button>
               <span className="arrival-kicker">
-                {allVisited ? (
+                {showCompletion ? (
                   <Flag size={14} aria-hidden="true" />
                 ) : (
                   <MapPin size={14} aria-hidden="true" />
@@ -357,7 +373,7 @@ export function SojeMapExperience() {
               </span>
               <h3 id="arrival-title">{arrivalLocation.arrival.headline}</h3>
               <p>{arrivalLocation.arrival.message}</p>
-              {allVisited ? (
+              {showCompletion ? (
                 <p className="arrival-complete">
                   <Check size={14} aria-hidden="true" />
                   소제동 기억 산책 6곳을 모두 걸었습니다.
