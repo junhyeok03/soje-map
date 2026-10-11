@@ -21,7 +21,7 @@ type InteractiveMapProps = {
   userAccuracy: number | null;
   userDraggable: boolean;
   onUserMove: (position: LatLng) => void;
-  guideTarget: LatLng | null;
+  guidePath: LatLng[] | null;
   startPoint: { name: string; coordinates: LatLng } | null;
 };
 
@@ -37,7 +37,7 @@ export function InteractiveMap({
   userAccuracy,
   userDraggable,
   onUserMove,
-  guideTarget,
+  guidePath,
   startPoint,
 }: InteractiveMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -242,13 +242,13 @@ export function InteractiveMap({
     const map = mapRef.current;
     if (!mapReady || !L || !map) return;
 
-    if (!userPosition || !guideTarget) {
+    if (!guidePath || guidePath.length < 2) {
       guideLineRef.current?.remove();
       guideLineRef.current = null;
       return;
     }
 
-    const points: LatLng[] = [userPosition, guideTarget];
+    const points = guidePath;
     if (!guideLineRef.current) {
       guideLineRef.current = L.polyline(points, {
         className: "guide-line",
@@ -262,7 +262,7 @@ export function InteractiveMap({
     } else {
       guideLineRef.current.setLatLngs(points);
     }
-  }, [mapReady, userPosition, guideTarget]);
+  }, [mapReady, guidePath]);
 
   useEffect(() => {
     const L = leafletRef.current;

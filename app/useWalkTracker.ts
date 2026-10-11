@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { distanceMeters, interpolate, type LatLng } from "./arrival";
+import { pathLength, pointAlongPath, type LatLng } from "./arrival";
 
 export type WalkMode = "off" | "gps" | "sim";
 
@@ -112,22 +112,24 @@ export function useWalkTracker(simStart: LatLng, onPosition: PositionListener) {
     [cancelWalk, report],
   );
 
-  const walkTo = useCallback(
-    (target: LatLng) => {
-      const from = positionRef.current;
+  // path[0]은 현재 위치, 마지막 점이 목적지. 길을 따라 일정한 속도로 걷는다.
+  const walkAlong = useCallback(
+    (path: LatLng[]) => {
       cancelWalk();
-      if (!from) {
-        report(target, null);
+      if (path.length === 0) return;
+      if (path.length === 1) {
+        report(path[0], null);
         return;
       }
 
+      const totalMeters = pathLength(path);
       const startedAt = performance.now();
-      const duration = walkDurationMs(distanceMeters(from, target));
+      const duration = walkDurationMs(totalMeters);
       setWalking(true);
 
       const step = (now: number) => {
-        const progress = (now - startedAt) / duration;
-        report(interpolate(from, target, progress), null);
+        const progress = Math.min((now - startedAt) / duration, 1);
+        report(pointAlongPath(path, totalMeters * progress), null);
         if (progress < 1) {
           frameRef.current = requestAnimationFrame(step);
         } else {
@@ -159,6 +161,6 @@ export function useWalkTracker(simStart: LatLng, onPosition: PositionListener) {
     startSim,
     stop,
     moveTo,
-    walkTo,
+    walkAlong,
   };
 }

@@ -97,6 +97,86 @@ export function interpolate(from: LatLng, to: LatLng, progress: number): LatLng 
   return [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
 }
 
+export function pathLength(path: LatLng[]): number {
+  let total = 0;
+  for (let i = 1; i < path.length; i += 1) {
+    total += distanceMeters(path[i - 1], path[i]);
+  }
+  return total;
+}
+
+/** 경로 시작점에서 meters만큼 걸어간 지점 (경로 길이를 넘으면 끝점) */
+export function pointAlongPath(path: LatLng[], meters: number): LatLng {
+  if (path.length === 0) throw new Error("빈 경로입니다.");
+  let remaining = Math.max(meters, 0);
+  for (let i = 1; i < path.length; i += 1) {
+    const segment = distanceMeters(path[i - 1], path[i]);
+    if (remaining <= segment && segment > 0) {
+      return interpolate(path[i - 1], path[i], remaining / segment);
+    }
+    remaining -= segment;
+  }
+  return path[path.length - 1];
+}
+
+// 수백 m 범위에서는 위경도를 평면 좌표(m)로 근사해도 오차가 무시할 만하다.
+function toLocalMeters(origin: LatLng, point: LatLng): [number, number] {
+  const metersPerDegreeLat = 110_540;
+  const metersPerDegreeLng = 111_320 * Math.cos(toRadians(origin[0]));
+  return [
+    (point[1] - origin[1]) * metersPerDegreeLng,
+    (point[0] - origin[0]) * metersPerDegreeLat,
+  ];
+}
+
+/** 경로에서 position과 가장 가까운 지점과 그 지점이 속한 구간 번호 */
+export function nearestPointOnPath(
+  path: LatLng[],
+  position: LatLng,
+): { point: LatLng; segment: number; distance: number } {
+  let best = { point: path[0], segment: 0, distance: distanceMeters(position, path[0]) };
+
+  for (let i = 1; i < path.length; i += 1) {
+    const [ax, ay] = toLocalMeters(position, path[i - 1]);
+    const [bx, by] = toLocalMeters(position, path[i]);
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lengthSquared = dx * dx + dy * dy;
+    const t =
+      lengthSquared === 0
+        ? 0
+        : Math.min(Math.max(-(ax * dx + ay * dy) / lengthSquared, 0), 1);
+    const point = interpolate(path[i - 1], path[i], t);
+    const distance = distanceMeters(position, point);
+    if (distance < best.distance) best = { point, segment: i - 1, distance };
+  }
+
+  return best;
+}
+
+// 경로에서 이보다 멀리 떨어져 있으면 길을 따라가지 않고 목적지로 곧장 향한다 (예: 멀리서 켠 GPS)
+export const ROUTE_SNAP_METERS = 150;
+
+/**
+ * 현재 위치에서 목적지까지 갈 경로. 미리 받아 둔 도보 경로 근처에 있으면
+ * 가장 가까운 길 위 지점으로 들어가 남은 길을 따라가고, 아니면 직선으로 간다.
+ */
+export function routeToward(
+  position: LatLng,
+  destination: LatLng,
+  path: LatLng[] | undefined,
+): LatLng[] {
+  if (!path || path.length < 2) return [position, destination];
+
+  const nearest = nearestPointOnPath(path, position);
+  if (nearest.distance > ROUTE_SNAP_METERS) return [position, destination];
+
+  const rest = path.slice(nearest.segment + 1);
+  return nearest.distance < 1
+    ? [position, ...rest]
+    : [position, nearest.point, ...rest];
+}
+
 export function formatDistance(meters: number): string {
   if (Math.round(meters) < 1000) return `${Math.round(meters)}m`;
   return `${(meters / 1000).toFixed(1)}km`;
