@@ -9,6 +9,10 @@
 - 장소별 과거·현재·미래 탭
 - 현재 탭의 대전광역시 사진 아카이브 사진
 - 과거·미래 탭의 장소별 AI 상상 이미지 12장
+- 걸으며 체험하기: 현장 모드(휴대폰 GPS)와 시연 모드(대전역 출발, 점 드래그·자동 걷기)
+- 도착 이벤트: 장소 반경 30m 진입 시 도착 카드, 과거 탭 바로 열기, 방문 표시와 6곳 완주
+- 지도 안 길안내: 다음 장소까지 실제 도보 경로 점선, 방향·직선거리·도보 추정 시간
+- 카카오맵·구글 지도 도보 길찾기 링크 (지도의 회색 점을 출발지로 사용, API 키 불필요)
 - Spring Boot 백엔드 골격과 상태 확인 엔드포인트
 - Raspberry Pi 5 온프레미스 배포를 위한 Docker Compose 구성
 - GitHub Actions 기반 프론트·백엔드·컨테이너 CI
@@ -23,7 +27,7 @@
 
 ## 로컬 실행
 
-Node.js 22 이상이 필요합니다.
+Node.js 22.18 이상이 필요합니다.
 
 ```bash
 npm install
@@ -37,6 +41,24 @@ mvn -f backend/pom.xml spring-boot:run
 ```
 
 백엔드 상태 확인 경로는 `http://localhost:8080/actuator/health`입니다.
+
+## 작업 시 필수 사항
+
+1. **Node.js 22.18 이상**을 사용합니다. 테스트가 TypeScript 파일(`app/arrival.ts` 등)을 Node로 직접 불러오는데, 이 기능이 22.18부터 기본으로 켜집니다.
+2. **장소의 좌표나 순서를 바꾸면 도보 경로를 다시 생성합니다.** 장소 데이터는 `app/locations.ts`에 있고, 시연 모드의 걷기 경로는 `app/walkRoutes.ts`에 미리 저장되어 있습니다. `app/walkRoutes.ts`는 직접 고치지 말고 아래 명령으로 다시 만듭니다(인터넷 연결 필요).
+
+   ```bash
+   node scripts/fetch-walk-routes.mjs
+   ```
+
+3. **푸시 전에 CI와 같은 검사를 통과시킵니다.**
+
+   ```bash
+   npm run typecheck && npm run lint && npm test
+   ```
+
+4. **휴대폰 GPS(현장 모드)는 배포된 HTTPS 주소에서 확인합니다.** 휴대폰에서 `http://192.168.x.x:3000` 같은 주소로 접속하면 브라우저가 위치 기능을 막습니다. 노트북 로컬(`http://localhost:3000`)에서는 시연 모드로 확인합니다.
+5. **이미지를 추가하면 출처를 함께 적습니다.** 사진은 `public/locations/ATTRIBUTIONS.md`, AI 이미지는 `public/locations/generated/README.md`에 기록하고, AI 이미지는 화면에도 AI 생성임을 표시합니다.
 
 ## Docker 실행
 
